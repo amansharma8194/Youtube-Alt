@@ -6,7 +6,7 @@ const port = process.env.PORT || 3000;
 mongoDBConnect()
 .then(()=>{
     app.listen(port, ()=>{
-        console.log(`   Server is running at Port: ${port}`);
+        console.log(`----- Server is running at Port: ${port} --------`);
     })
 })
 .catch((err)=>{

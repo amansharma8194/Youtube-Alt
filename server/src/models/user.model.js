@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
+const {Schema} = mongoose;
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken')
 
-const userSchema = new mongoose.Schema({
+const userSchema = new Schema({
     username : {
         type: String,
         unique: true,
@@ -37,7 +38,7 @@ const userSchema = new mongoose.Schema({
     },
     watchHistory: [
         {
-            type: mongoose.Schema.Types.ObjectId(),
+            type: Schema.Types.ObjectId,
             ref: "Video"
         }
     ],
