@@ -3,6 +3,7 @@ const ApiError = require("../utils/apiError.js");
 const ApiResponse = require("../utils/apiResponse.js");
 const User = require("../models/user.model.js");
 const {uploadOnCloudinary} = require("../utils/cloudinary.js");
+const jwt = require("jsonwebtoken");
 
 
 
@@ -113,4 +114,32 @@ const logoutController = asyncHandler( async (req, res) => {
     .json( new ApiResponse(200, {}, "Logged Out Sucessfully."));
 })
 
-module.exports = {registerController, loginController, logoutController}
+// takes refresh token from the user and resets refresh token and access token
+const refreshTokenController = asyncHandler( async (req, res) => {
+
+
+    const clientRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+    if(!clientRefreshToken) throw new ApiError(401, "Unauthorised Request");
+
+
+    const decodedClientRefreshToken = jwt.verify(clientRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    const userResp = await User.findById(decodedClientRefreshToken._id);
+    if(!userResp || clientRefreshToken!==userResp.refreshToken) throw new ApiError(401, "Invalid Refresh Token");
+
+
+    const {accessToken, refreshToken} = await generateTokens(userResp._id);
+    userResp.refreshToken = refreshToken;
+    userResp.save();
+
+
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res.status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json( new ApiResponse(200, { "accessToken": accessToken, "refreshToken": refreshToken }, "Tokens Updated Successfully."));
+})
+module.exports = {registerController, loginController, logoutController, refreshTokenController}

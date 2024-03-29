@@ -1,4 +1,4 @@
-const {registerController, loginController, logoutController} = require("../controllers/user.controller.js");
+const { registerController, loginController, logoutController, refreshTokenController } = require("../controllers/user.controller.js");
 const verifyJwt = require("../middlewares/auth.middleware.js");
 const router = require("express").Router();
 const multerUpload = require("../middlewares/multer.middleware.js");
@@ -20,5 +20,7 @@ router.route("/register").post(
 router.route("/login").post(loginController);
 
 router.route("/logout").post(verifyJwt, logoutController);
+
+router.route("/refresh-token").post(refreshTokenController)
 
 module.exports = router;
