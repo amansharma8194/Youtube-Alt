@@ -27,9 +27,9 @@ router.route("/change-password").post(verifyJwt, updatePasswordController);
 
 router.route("/user").get(verifyJwt, getUserController);
 
-router.route("/change-avatar").post(verifyJwt, multerUpload.single("avatar") ,changeAvatarController);
+router.route("/change-avatar").patch(verifyJwt, multerUpload.single("avatar") ,changeAvatarController);
 
-router.route("/change-coverImg").post(verifyJwt, multerUpload.single("coverImage"), changeCoverImgController);
+router.route("/change-coverImg").patch(verifyJwt, multerUpload.single("coverImage"), changeCoverImgController);
 
 router.route("/channels/:username").post(getChannelDetailsController);
 

@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler.js");
 const ApiError = require("../utils/apiError.js");
 const ApiResponse = require("../utils/apiResponse.js");
 const User = require("../models/user.model.js");
+const subscriptionModel = require("../models/subscription.model.js");
 const {uploadOnCloudinary, deleteOnCloudinary} = require("../utils/cloudinary.js");
 const jwt = require("jsonwebtoken");
 const { default: mongoose } = require("mongoose");
@@ -167,7 +168,8 @@ const changeAvatarController = asyncHandler( async(req, res) => {
     const newAvatarLocalPath = req.file?.path;
     if(!userId) throw new ApiError(400, "Avatar Local Path is Missing.");
     // delete old image on cloudinary
-    const public_id_cloudinary = req.user.avatar.split("/").pop();
+    const public_id_cloudinary = req.user.avatar.split("/").pop().replace(/\.[^.]+$/, '');
+    // console.log("-----public id---------",public_id_cloudinary)
     await deleteOnCloudinary(public_id_cloudinary);
     // upload new image on cloudinary
     const uploadAvatarResp = await uploadOnCloudinary(newAvatarLocalPath);
@@ -189,7 +191,7 @@ const changeCoverImgController = asyncHandler( async(req, res) => {
 
     // delete old image on cloudinary
     if(req.user.coverImg){
-        const public_id_cloudinary = req.user.coverImg.split("/").pop();
+        const public_id_cloudinary = req.user.coverImg.split("/").pop().replace(/\.[^.]+$/, '');
         await deleteOnCloudinary(public_id_cloudinary);
     }
     
@@ -206,12 +208,15 @@ const changeCoverImgController = asyncHandler( async(req, res) => {
 });
 
 const getChannelDetailsController = asyncHandler(async(req, res)=>{
-    const username = req.params;
-    if(!username?.trim()) throw new ApiError(400, "Username is required to get Profile data.");
+    const username = req.params.username.trim();
+    const userId = req.user?._id;
+    if(!username) throw new ApiError(400, "Username is required to get Profile data.");
     const channelDetails =  await User.aggregate([
         // find user details
         {
-            $match: username
+            $match: {
+                username: username
+            }
         },
         //find subscribers
         {
@@ -242,14 +247,14 @@ const getChannelDetailsController = asyncHandler(async(req, res)=>{
                 },
                 isCurChannelSubscribed: {
                     $cond: {
-                        if: {$in: [req.user._id, "$subscribers.subscriber"]},
+                        if: {$in: [userId, "$subscribers.subscriber"]},
                         then: true,
                         else: false  
                     }
                 }
            }
         },
-        // exclude fields
+        // desired fields
         {
             $project: {
                 fullName: 1,
@@ -263,16 +268,18 @@ const getChannelDetailsController = asyncHandler(async(req, res)=>{
             }
         }
     ]);
-    console.log("--------- Channel details---------\n", channelDetails);
+    console.log("--------- Channel details---------\n", channelDetails[0]);
     if(!channelDetails?.length) throw new ApiError(400, "channel Does not Exist");
     return res.status(200)
-    .json(200, channelDetails[0], "Channel Details Fetched Successfully");
+    .json(new ApiResponse(200, channelDetails[0], "Channel Details Fetched Successfully"));
 });
 
 const getWatchHistoryController = asyncHandler( async(req, res) => {
-    const userRespWithHistory = User.aggregate([
+    const userRespWithHistory = await User.aggregate([
         {
-            $match: mongoose.Types.ObjectId(req.user._id)
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
         },
         {
             $lookup: {
@@ -286,16 +293,19 @@ const getWatchHistoryController = asyncHandler( async(req, res) => {
                             from: "users",
                             localField: "owner",
                             foreignField: "_id",
-                            as: "owner"
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                            }
+                            ]
                         } 
                     },
-                    {
-                        $project: {
-                            fullName: 1,
-                            username: 1,
-                            avatar: 1
-                        }
-                    },
+                   
                     {
                         $addFields: {
                             owner: {
@@ -307,10 +317,22 @@ const getWatchHistoryController = asyncHandler( async(req, res) => {
             }
         }
     ]);
+    console.log(userRespWithHistory);
     return res.status(200)
-    .json(200, userRespWithHistory[0].watchHistory, "watch History fetched Successfully.");
+    .json(new ApiResponse(200, userRespWithHistory[0].watchHistory, "watch History fetched Successfully."));
 })
 
+
+// const subscribeController = asyncHandler( async(req, res) => {
+//     const userId = req.user?._id;
+//     const channelUserName = req.body.channel;
+//     if(!userId) throw new ApiError(400, "Unauthorised Request.");
+//     await subscriptionModel.create({
+//         subscriber: userId
+//     })
+
+
+// })
 
 module.exports = 
 {   registerController, 
