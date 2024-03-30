@@ -1,4 +1,4 @@
-const { registerController, loginController, logoutController, refreshTokenController, updatePasswordController, getUserController, changeAvatarController, changeCoverImgController, getChannelDetailsController, getWatchHistoryController } = require("../controllers/user.controller.js");
+const { registerController, loginController, logoutController, refreshTokenController, updatePasswordController, getUserController, changeAvatarController, changeCoverImgController, getChannelDetailsController, getWatchHistoryController, subscribeController } = require("../controllers/user.controller.js");
 const verifyJwt = require("../middlewares/auth.middleware.js");
 const router = require("express").Router();
 const multerUpload = require("../middlewares/multer.middleware.js");
@@ -34,5 +34,7 @@ router.route("/change-coverImg").patch(verifyJwt, multerUpload.single("coverImag
 router.route("/channels/:username").post(getChannelDetailsController);
 
 router.route("/watch-history").post(verifyJwt, getWatchHistoryController);
+
+router.route("/subscribe").post(verifyJwt, subscribeController);
 
 module.exports = router;

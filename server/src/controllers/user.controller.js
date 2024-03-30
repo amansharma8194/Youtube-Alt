@@ -323,16 +323,27 @@ const getWatchHistoryController = asyncHandler( async(req, res) => {
 })
 
 
-// const subscribeController = asyncHandler( async(req, res) => {
-//     const userId = req.user?._id;
-//     const channelUserName = req.body.channel;
-//     if(!userId) throw new ApiError(400, "Unauthorised Request.");
-//     await subscriptionModel.create({
-//         subscriber: userId
-//     })
+const subscribeController = asyncHandler( async(req, res) => {
+    const userId = req.user?._id;
+    const channelUserName = req.body.channel;
+    const channelData = await User.findOne({username: channelUserName});
+    if(!userId) throw new ApiError(400, "Unauthorised Request.");
+    const existingSubscription = await subscriptionModel.findOne({
+        subscriber: userId,
+        channel: channelData._id,
+    });
 
-
-// })
+    if (existingSubscription) {
+        // Subscription already exists
+         throw new ApiError(409, "Already Subscribed");
+    }
+    const resp = await subscriptionModel.create({
+        subscriber: userId,
+        channel: channelData._id
+    });
+    // console.log(resp)
+    return res.status(200).json(new ApiResponse(200, resp, "Subscribed SuccessFully."));
+})
 
 module.exports = 
 {   registerController, 
@@ -344,5 +355,6 @@ module.exports =
     changeAvatarController,
     changeCoverImgController,
     getChannelDetailsController,
-    getWatchHistoryController
+    getWatchHistoryController,
+    subscribeController
 }
