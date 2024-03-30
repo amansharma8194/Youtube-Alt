@@ -1,4 +1,5 @@
-import mongoose, {Schema} from "mongoose";
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
 const playlistSchema = new Schema({
     name: {
@@ -23,4 +24,4 @@ const playlistSchema = new Schema({
 
 
 
-export const Playlist = mongoose.model("Playlist", playlistSchema)
+module.exports = mongoose.model("Playlist", playlistSchema)
