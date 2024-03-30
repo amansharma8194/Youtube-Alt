@@ -1,5 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 const fs = require("fs");
+const ApiError = require("../utils/apiError.js");
 
           
 cloudinary.config({ 
@@ -22,5 +23,13 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-module.exports = {uploadOnCloudinary}
+const deleteOnCloudinary = async (filePublicId) => {
+    try {
+        await cloudinary.uploader.destroy(filePublicId, { resource_type: "auto"});
+    } catch (error) {
+        throw new ApiError(400, "Error while Deleting On Cloudinary.")
+    }
+}
+
+module.exports = {uploadOnCloudinary, deleteOnCloudinary}
 
